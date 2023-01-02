@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "Canvas/canvas.h"
+#include "Simulation/simulation.h"
 
 int main() {
     CANVAS canvas;
@@ -11,14 +12,7 @@ int main() {
     canvas.cells[4][4] = true;
     canvas.cells[4][3] = true;
 
-    canvasPrint(&canvas);
-    canvasUpdate(&canvas);
-    canvasPrint(&canvas);
-    canvasUpdate(&canvas);
-    canvasPrint(&canvas);
-    canvasUpdate(&canvas);
-    canvasPrint(&canvas);
-    canvasUpdate(&canvas);
+    simulationStart(&canvas);
 
     canvasDispose(&canvas);
     return 0;

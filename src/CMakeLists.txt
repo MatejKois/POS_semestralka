@@ -3,4 +3,4 @@ project(POS_semestralka C)
 
 set(CMAKE_C_STANDARD 99)
 
-add_executable(POS_semestralka main.c Canvas/canvas.c Canvas/canvas.h)
+add_executable(POS_semestralka main.c Canvas/canvas.c Canvas/canvas.h Simulation/simulation.h Simulation/simulation.c)
