@@ -39,6 +39,24 @@ int canvasCountNeighbors(int y, int x, CANVAS* canvas) {
     return count;
 }
 
+void canvasUpdate(CANVAS* canvas) {
+    int neighborsCount[canvas->sizeY][canvas->sizeX];
+    for (int y = 0; y < canvas->sizeY; ++y) {
+        for (int x = 0; x < canvas->sizeX; ++x) {
+            neighborsCount[y][x] = canvasCountNeighbors(y, x, canvas);
+        }
+    }
+    for (int y = 0; y < canvas->sizeY; ++y) {
+        for (int x = 0; x < canvas->sizeX; ++x) {
+            if (canvas->cells[y][x]) {
+                canvas->cells[y][x] = neighborsCount[y][x] > 1 && neighborsCount[y][x] < 4;
+            } else {
+                canvas->cells[y][x] = neighborsCount[y][x] == 3;
+            }
+        }
+    }
+}
+
 void canvasPrint(CANVAS* canvas) {
     for (int i = 0; i < canvas->sizeY + 1; ++i) {
         printf("---");

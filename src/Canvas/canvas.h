@@ -15,6 +15,8 @@ void canvasDispose(CANVAS* canvas);
 
 int canvasCountNeighbors(int y, int x, CANVAS* canvas);
 
+void canvasUpdate(CANVAS* canvas);
+
 void canvasPrint(CANVAS* canvas);
 
 #endif //POS_SEMESTRALKA_CANVAS_H
