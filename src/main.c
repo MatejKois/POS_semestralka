@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include "Canvas/canvas.h"
 #include "Simulation/simulation.h"
 

@@ -15,7 +15,8 @@ void canvasDispose(CANVAS* canvas);
 
 int canvasCountNeighbors(int y, int x, CANVAS* canvas);
 
-void canvasUpdate(CANVAS* canvas);
+//returns the number of changes occured on update
+int canvasUpdate(CANVAS* canvas);
 
 void canvasPrint(CANVAS* canvas);
 
