@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <unistd.h>
 #include "Canvas/canvas.h"
 #include "Simulation/simulation.h"
 
@@ -14,5 +16,6 @@ int main() {
     simulationStart(&canvas);
 
     canvasDispose(&canvas);
+
     return 0;
 }

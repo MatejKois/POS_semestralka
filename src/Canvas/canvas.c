@@ -42,11 +42,13 @@ int canvasCountNeighbors(int y, int x, CANVAS* canvas) {
 int canvasUpdate(CANVAS* canvas) {
     int neighborsCount[canvas->sizeY][canvas->sizeX];
     int countChanges = 0;
+
     for (int y = 0; y < canvas->sizeY; ++y) {
         for (int x = 0; x < canvas->sizeX; ++x) {
             neighborsCount[y][x] = canvasCountNeighbors(y, x, canvas);
         }
     }
+
     for (int y = 0; y < canvas->sizeY; ++y) {
         for (int x = 0; x < canvas->sizeX; ++x) {
             if (canvas->cells[y][x]) {
@@ -62,6 +64,7 @@ int canvasUpdate(CANVAS* canvas) {
             }
         }
     }
+
     return countChanges;
 }
 
