@@ -10,7 +10,6 @@ typedef struct argsSimulation {
     CANVAS* canvas;
     pthread_mutex_t* mutex;
     pthread_cond_t* condIsNotPaused;
-    pthread_cond_t* condIsPaused;
 } ARGS_SIMULATION;
 
 static void* simulationPrint(void* params);

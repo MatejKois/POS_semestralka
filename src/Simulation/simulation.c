@@ -7,6 +7,8 @@
 static void* simulationPrint(void* params) {
     ARGS_SIMULATION* args = (ARGS_SIMULATION*)params;
 
+    printf("Running simulation... Press any key to pause\n");
+
     while (*args->changesCount > 0) {
         sleep(1);
         pthread_mutex_lock(args->mutex);
@@ -47,8 +49,6 @@ void simulationStart(CANVAS* canvas) {
     pthread_mutex_init(&mutex, NULL);
     pthread_cond_t condIsNotPaused;
     pthread_cond_init(&condIsNotPaused, NULL);
-    pthread_cond_t condIsPaused;
-    pthread_cond_init(&condIsPaused, NULL);
     pthread_t threadPrint;
     pthread_t threadPause;
 
@@ -61,8 +61,7 @@ void simulationStart(CANVAS* canvas) {
             changesCount,
             canvas,
             &mutex,
-            &condIsNotPaused,
-            &condIsPaused
+            &condIsNotPaused
     };
 
     pthread_create(&threadPrint, NULL, &simulationPrint, &args);
@@ -73,7 +72,6 @@ void simulationStart(CANVAS* canvas) {
 
     pthread_mutex_destroy(&mutex);
     pthread_cond_destroy(&condIsNotPaused);
-    pthread_cond_destroy(&condIsPaused);
 
     free(isPaused);
     free(changesCount);
