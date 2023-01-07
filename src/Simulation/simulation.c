@@ -3,6 +3,7 @@
 #include <string.h>
 #include <malloc.h>
 #include "simulation.h"
+#include "../Menu/menu.h"
 
 static void* simulationPrint(void* params) {
     ARGS_SIMULATION* args = (ARGS_SIMULATION*)params;
@@ -33,8 +34,9 @@ static void* simulationPause(void* params) {
         *args->isPaused = 1;
         pthread_mutex_unlock(args->mutex);
 
-        printf("Paused...press any key to continue: ");
-        scanf("%s", buff);
+//        printf("Paused...press any key to continue: ");
+//        scanf("%s", buff);
+        menuPause(args->canvas);
 
         pthread_mutex_lock(args->mutex);
         *args->isPaused = 0;

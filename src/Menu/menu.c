@@ -2,26 +2,38 @@
 #include <string.h>
 #include <stdlib.h>
 #include "menu.h"
-#include "../Canvas/canvas.h"
 #include "../Simulation/simulation.h"
+#include "../Communication/client.h"
+
+#define PORT_NO 16548
 
 void menuClient() {
+    CANVAS canvas;
     printf("Welcome to game of life!\n");
     printf("1 - create layout\n");
     printf("2 - download from server\n");
     char buff[10];
     scanf("%s", buff);
     if (strcmp(buff, "2") == 0) {
-
+        client("frios2.fri.uniza.sk", PORT_NO, &canvas, false);
     } else {
-        printf("Enter Y dimension: ");
-        scanf("%s", buff);
-        int y = strtol(buff, NULL, 10);
-        printf("Enter X dimension: ");
-        scanf("%s", buff);
-        int x = strtol(buff, NULL, 10);
+        int y = 0;
+        int x = 0;
+        while (1) {
+            printf("Enter Y dimension: ");
+            scanf("%s", buff);
+            y = strtol(buff, NULL, 10);
+            printf("Enter X dimension: ");
+            scanf("%s", buff);
+            x = strtol(buff, NULL, 10);
 
-        CANVAS canvas;
+            if (y > 30 || x > 30) {
+                printf("Too large! (Enter max 30 for both dimensions)...\n");
+            } else {
+                break;
+            }
+        }
+
         canvasInit(x, y, &canvas);
 
         printf("Please enter cell coordinates, one by one:\n");
@@ -43,16 +55,20 @@ void menuClient() {
                 break;
             }
         }
-
-        printf("Press any key to start the simulation: ");
-        scanf("%s", buff);
-
-        simulationStart(&canvas);
-
-        canvasDispose(&canvas);
     }
+    printf("Press any key to start the simulation: ");
+    scanf("%s", buff);
+
+    simulationStart(&canvas);
+
+    canvasDispose(&canvas);
 }
 
-void menuPause() {
-
+void menuPause(CANVAS* canvas) {
+    printf("Paused...\nPress s to save your progress or any other key to continue: ");
+    char buff[10];
+    scanf("%s", buff);
+    if (strcmp(buff, "s") == 0) {
+        client("frios2.fri.uniza.sk", PORT_NO, canvas, true);
+    }
 }
