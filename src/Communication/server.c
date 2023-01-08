@@ -131,14 +131,15 @@ void* serverSaveLoadThread(void* params) {
     }
 
     char filename[100];
+    strcat(filename, "savegame/");
     int i = 5;
     while (1) {
         if (buffer[i] == '\n') {
-            filename[i - 5] = '\0';
+            filename[i + 4] = '\0';
             strcat(filename, ".txt");
             break;
         }
-        filename[i - 5] = buffer[i];
+        filename[i + 4] = buffer[i];
         ++i;
     }
     printf("Client on socket %d: request> %s filename '%s'\n", newsockfdSaveLoad, buffer[0] == 's' ? "save" : "load",
