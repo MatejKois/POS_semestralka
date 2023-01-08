@@ -5,7 +5,7 @@
 #include "../Simulation/simulation.h"
 #include "../Communication/client.h"
 
-#define PORT_NO 16548
+#define PORT_NO 10000
 
 void menuClient() {
     CANVAS canvas;

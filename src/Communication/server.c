@@ -7,6 +7,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#define CONNECTED_MAX_NO 5
+
 int server(int argc, char* argv[]) {
     int sockfd, newsockfd;
     socklen_t cli_len;
@@ -25,7 +27,7 @@ int server(int argc, char* argv[]) {
     serv_addr.sin_addr.s_addr = INADDR_ANY; //maska - zodpoveda pocuvaniu celeho internetu
     serv_addr.sin_port = htons(
             atoi(argv[1])); //cislo portu na pocuvanie, htons prevedie format cisla z little na big endian
-    //                                   SOCK_STREAM - TCP, SOCK_DGRAM - UDP
+    //                       SOCK_STREAM - TCP, SOCK_DGRAM - UDP
     sockfd = socket(AF_INET, SOCK_STREAM, 0); //systemove volanie, vracia identifikacne cislo socketu
 
     if (sockfd < 0) {
@@ -37,48 +39,137 @@ int server(int argc, char* argv[]) {
         perror("Error binding socket address");
         return 2;
     }
-    //                    5 - kolko klientov sa moze pripojit na socket v jednom okamihu (velkost frontu neobsluzenych klientov)
-    listen(sockfd, 5); //vytvorenie pasivneho socketu - po pripojeni nan vznikne vlastny socket pre komunikovanie
+
+    listen(sockfd,
+           CONNECTED_MAX_NO); //vytvorenie pasivneho socketu - po pripojeni nan vznikne vlastny socket pre komunikovanie
 
     cli_len = sizeof(cli_addr);
 
-    newsockfd = accept(sockfd, (struct sockaddr*)&cli_addr,
-                       &cli_len); //tu program zastavi a caka kym sa niekto pripoji
+    int somethingOpened = 0;
+    pthread_mutex_t mutex;
+    pthread_mutex_init(&mutex, NULL);
+    pthread_cond_t condIsNotOpened;
+    pthread_cond_init(&condIsNotOpened, NULL);
 
-    if (newsockfd < 0) {
+    ARGS_SERVER_QUIT argsServerQuit = {
+            &sockfd,
+            &mutex,
+            &condIsNotOpened
+    };
+
+    pthread_t threadQuit;
+    pthread_create(&threadQuit, NULL, &serverQuitThread, &argsServerQuit);
+
+    pthread_t threadsSaveLoad[CONNECTED_MAX_NO];
+    int connectedPosition = 0;
+
+    while (1) {
+        if (connectedPosition >= CONNECTED_MAX_NO) {
+            printf("Server busy! Please hold on...\n");
+            for (int i = 0; i < connectedPosition; ++i) {
+                pthread_join(threadsSaveLoad[i], NULL);
+            }
+            connectedPosition = 0;
+        }
+
+        newsockfd = accept(sockfd, (struct sockaddr*)&cli_addr,
+                           &cli_len); //tu program zastavi a caka kym sa niekto pripoji
+
+        ARGS_SERVER_SAVE_LOAD argsServerSaveLoad = {
+                &somethingOpened,
+                newsockfd,
+                &mutex,
+                &condIsNotOpened
+        };
+        pthread_create(&threadsSaveLoad[connectedPosition], NULL, &serverSaveLoadThread, &argsServerSaveLoad);
+        ++connectedPosition;
+    }
+}
+
+void* serverQuitThread(void* params) {
+    ARGS_SERVER_QUIT* args = (ARGS_SERVER_QUIT*)params;
+
+    char buff[10];
+    printf("Press 'q' anytime to quit\n");
+    scanf("%s", buff);
+    printf("Quitting...\n");
+
+    close(*args->sockfdToClose);
+
+    pthread_mutex_destroy(args->mutex);
+    pthread_cond_destroy(args->condIsNotOpened);
+
+    exit(0);
+}
+
+void* serverSaveLoadThread(void* params) {
+    ARGS_SERVER_SAVE_LOAD* args = (ARGS_SERVER_SAVE_LOAD*)params;
+
+    int n;
+    char buffer[1000];
+
+    if (args->newsockfd < 0) {
         perror("ERROR on accept");
-        return 3;
+        close(args->newsockfd);
+        return NULL;
     }
 
     bzero(buffer, 1000);
-    n = read(newsockfd, buffer, 999); //nacitanie do buffera
+    n = read(args->newsockfd, buffer, 999); //nacitanie do buffera
     if (n < 0) {
         perror("Error reading from socket");
-        return 5;
+        close(args->newsockfd);
+        return NULL;
     }
 
     char filename[100];
     int i = 5;
     while (1) {
         if (buffer[i] == '\n') {
-            filename[i - 5] = '.';
-            filename[i - 4] = 't';
-            filename[i - 3] = 'x';
-            filename[i - 2] = 't';
-            filename[i - 1] = '\0';
+            filename[i - 5] = '\0';
+            strcat(filename, ".txt");
             break;
         }
         filename[i - 5] = buffer[i];
         ++i;
     }
 
+    pthread_mutex_lock(args->mutex);
+    while (*args->somethingOpened == 1) {
+        pthread_cond_wait(args->condIsNotOpened, args->mutex);
+    }
+    *args->somethingOpened = 1;
+    pthread_mutex_unlock(args->mutex);
+
     if (buffer[0] == 's') { //save
         FILE* out = fopen(filename, "w");
+
+        if (!out) {
+            printf("Error: file not found\n");
+            pthread_mutex_lock(args->mutex);
+            *args->somethingOpened = 0;
+            pthread_cond_signal(args->condIsNotOpened);
+            pthread_mutex_unlock(args->mutex);
+            close(args->newsockfd);
+            return NULL;
+        }
+
         fprintf(out, buffer);
+
         fclose(out);
     } else { //load
         FILE* in = fopen(filename, "r");
         bzero(buffer, 1000);
+
+        if (!in) {
+            printf("Error: file not found\n");
+            pthread_mutex_lock(args->mutex);
+            *args->somethingOpened = 0;
+            pthread_cond_signal(args->condIsNotOpened);
+            pthread_mutex_unlock(args->mutex);
+            close(args->newsockfd);
+            return NULL;
+        }
 
         int j = 0;
         while (!feof(in)) {
@@ -88,17 +179,26 @@ int server(int argc, char* argv[]) {
         }
         buffer[j + 1] = '\0';
 
-        n = write(newsockfd, buffer, 999);
+        n = write(args->newsockfd, buffer, 999);
         if (n < 0) {
             perror("Error writing to socket");
-            return 6;
+            pthread_mutex_lock(args->mutex);
+            *args->somethingOpened = 0;
+            pthread_cond_signal(args->condIsNotOpened);
+            pthread_mutex_unlock(args->mutex);
+            close(args->newsockfd);
+            return NULL;
         }
 
         fclose(in);
     }
 
-    close(newsockfd);
-    close(sockfd);
+    pthread_mutex_lock(args->mutex);
+    *args->somethingOpened = 0;
+    pthread_cond_signal(args->condIsNotOpened);
+    pthread_mutex_unlock(args->mutex);
 
-    return 0;
+    close(args->newsockfd);
+
+    return NULL;
 }
