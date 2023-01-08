@@ -3,7 +3,7 @@
 
 #include "../Canvas/canvas.h"
 
-void menuClient();
+void menuClient(char* port);
 
 void menuPause(CANVAS* canvas);
 

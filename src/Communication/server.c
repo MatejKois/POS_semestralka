@@ -7,7 +7,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#define CONNECTED_MAX_NO 5
+#define CONNECTED_MAX_NO 2
 
 int server(int argc, char* argv[]) {
     int sockfd, newsockfd;
@@ -77,7 +77,7 @@ int server(int argc, char* argv[]) {
 
         ARGS_SERVER_SAVE_LOAD argsServerSaveLoad = {
                 &somethingOpened,
-                newsockfd,
+                &newsockfd,
                 &mutex,
                 &condIsNotOpened
         };
@@ -104,21 +104,29 @@ void* serverQuitThread(void* params) {
 
 void* serverSaveLoadThread(void* params) {
     ARGS_SERVER_SAVE_LOAD* args = (ARGS_SERVER_SAVE_LOAD*)params;
+    int newsockfdSaveLoad;
+    pthread_mutex_lock(args->mutex);
+    newsockfdSaveLoad = *args->newsockfd;
+    pthread_mutex_unlock(args->mutex);
 
     int n;
     char buffer[1000];
 
-    if (args->newsockfd < 0) {
+    if (newsockfdSaveLoad < 0) {
         perror("ERROR on accept");
-        close(args->newsockfd);
+        close(newsockfdSaveLoad);
+        printf("Client disconnected from socket %d\n", newsockfdSaveLoad);
         return NULL;
     }
 
+    printf("Client connected to socket %d\n", newsockfdSaveLoad);
+
     bzero(buffer, 1000);
-    n = read(args->newsockfd, buffer, 999); //nacitanie do buffera
+    n = read(newsockfdSaveLoad, buffer, 999); //nacitanie do buffera
     if (n < 0) {
         perror("Error reading from socket");
-        close(args->newsockfd);
+        close(newsockfdSaveLoad);
+        printf("Client disconnected from socket %d\n", newsockfdSaveLoad);
         return NULL;
     }
 
@@ -133,6 +141,8 @@ void* serverSaveLoadThread(void* params) {
         filename[i - 5] = buffer[i];
         ++i;
     }
+    printf("Client on socket %d: request> %s filename '%s'\n", newsockfdSaveLoad, buffer[0] == 's' ? "save" : "load",
+           filename);
 
     pthread_mutex_lock(args->mutex);
     while (*args->somethingOpened == 1) {
@@ -150,7 +160,8 @@ void* serverSaveLoadThread(void* params) {
             *args->somethingOpened = 0;
             pthread_cond_signal(args->condIsNotOpened);
             pthread_mutex_unlock(args->mutex);
-            close(args->newsockfd);
+            close(newsockfdSaveLoad);
+            printf("Client disconnected from socket %d\n", newsockfdSaveLoad);
             return NULL;
         }
 
@@ -167,7 +178,8 @@ void* serverSaveLoadThread(void* params) {
             *args->somethingOpened = 0;
             pthread_cond_signal(args->condIsNotOpened);
             pthread_mutex_unlock(args->mutex);
-            close(args->newsockfd);
+            close(newsockfdSaveLoad);
+            printf("Client disconnected from socket %d\n", newsockfdSaveLoad);
             return NULL;
         }
 
@@ -179,14 +191,15 @@ void* serverSaveLoadThread(void* params) {
         }
         buffer[j + 1] = '\0';
 
-        n = write(args->newsockfd, buffer, 999);
+        n = write(newsockfdSaveLoad, buffer, 999);
         if (n < 0) {
             perror("Error writing to socket");
             pthread_mutex_lock(args->mutex);
             *args->somethingOpened = 0;
             pthread_cond_signal(args->condIsNotOpened);
             pthread_mutex_unlock(args->mutex);
-            close(args->newsockfd);
+            close(newsockfdSaveLoad);
+            printf("Client disconnected from socket %d\n", newsockfdSaveLoad);
             return NULL;
         }
 
@@ -198,7 +211,8 @@ void* serverSaveLoadThread(void* params) {
     pthread_cond_signal(args->condIsNotOpened);
     pthread_mutex_unlock(args->mutex);
 
-    close(args->newsockfd);
+    close(newsockfdSaveLoad);
+    printf("Client disconnected from socket %d\n", newsockfdSaveLoad);
 
     return NULL;
 }

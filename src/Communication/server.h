@@ -5,7 +5,7 @@
 
 typedef struct argsServerSaveLoad {
     int* somethingOpened;
-    int newsockfd;
+    int* newsockfd;
     pthread_mutex_t* mutex;
     pthread_cond_t* condIsNotOpened;
 } ARGS_SERVER_SAVE_LOAD;

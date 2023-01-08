@@ -5,9 +5,11 @@
 #include "../Simulation/simulation.h"
 #include "../Communication/client.h"
 
-#define PORT_NO 10000
+//#define PORT_NO 10000
+static int menuPortNumber = 10000;
 
-void menuClient() {
+void menuClient(char* port) {
+    menuPortNumber = strtol(port, NULL, 10);
     CANVAS canvas;
     printf("Welcome to game of life!\n");
     printf("1 - create layout\n");
@@ -15,7 +17,7 @@ void menuClient() {
     char buff[10];
     scanf("%s", buff);
     if (strcmp(buff, "2") == 0) {
-        client("frios2.fri.uniza.sk", PORT_NO, &canvas, false);
+        client("frios2.fri.uniza.sk", menuPortNumber, &canvas, false);
     } else {
         int y = 0;
         int x = 0;
@@ -69,6 +71,6 @@ void menuPause(CANVAS* canvas) {
     char buff[10];
     scanf("%s", buff);
     if (strcmp(buff, "s") == 0) {
-        client("frios2.fri.uniza.sk", PORT_NO, canvas, true);
+        client("frios2.fri.uniza.sk", menuPortNumber, canvas, true);
     }
 }
