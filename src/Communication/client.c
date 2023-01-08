@@ -89,7 +89,7 @@ int client(char* hostname, int portNo, CANVAS* canvas, bool save) {
         n = read(sockfd, buffer, 999);
         if (n < 0) {
             perror("Error reading from socket");
-            return 7;
+            return 6;
         }
 
         char strLine[100];
@@ -97,6 +97,11 @@ int client(char* hostname, int portNo, CANVAS* canvas, bool save) {
         int y, x;
 
         readLineFromBuffer(buffer, strLine, &indexLast);
+        if (strcmp(strLine, "Error: wrong filename!") == 0) {
+            printf("%s", buffer);
+            close(sockfd);
+            return 7;
+        }
         readLineFromBuffer(buffer, strLine, &indexLast);
 
         readLineFromBuffer(buffer, strLine, &indexLast);
@@ -129,12 +134,13 @@ int client(char* hostname, int portNo, CANVAS* canvas, bool save) {
 void readLineFromBuffer(char* buffer, char* strLine, int* indexLast) {
     int i = 0;
     while (true) {
-        *indexLast = *indexLast + 1;
         if (buffer[*indexLast] == '\n') {
             strLine[i] = '\0';
+            *indexLast = *indexLast + 1;
             break;
         }
         strLine[i] = buffer[*indexLast];
+        *indexLast = *indexLast + 1;
         i++;
     }
 }

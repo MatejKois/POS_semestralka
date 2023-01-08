@@ -155,17 +155,6 @@ void* serverSaveLoadThread(void* params) {
     if (buffer[0] == 's') { //save
         FILE* out = fopen(filename, "w");
 
-        if (!out) {
-            printf("Error: file not found\n");
-            pthread_mutex_lock(args->mutex);
-            *args->somethingOpened = 0;
-            pthread_cond_signal(args->condIsNotOpened);
-            pthread_mutex_unlock(args->mutex);
-            close(newsockfdSaveLoad);
-            printf("Client disconnected from socket %d\n", newsockfdSaveLoad);
-            return NULL;
-        }
-
         fprintf(out, buffer);
 
         fclose(out);
@@ -179,6 +168,28 @@ void* serverSaveLoadThread(void* params) {
             *args->somethingOpened = 0;
             pthread_cond_signal(args->condIsNotOpened);
             pthread_mutex_unlock(args->mutex);
+            strcat(buffer, "Error: wrong filename!\n");
+            strcat(buffer, "Available save files:\n");
+            system("ls savegame > availableSavesLog.txt");
+            FILE* log = fopen("availableSavesLog.txt", "r");
+            if (log) {
+                char command[500];
+                int j = 0;
+                while (!feof(log)) {
+                    char c = getc(log);
+                    command[j] = c;
+                    ++j;
+                }
+                command[j + 1] = '\0';
+                strcat(buffer, command);
+                fclose(log);
+                system("rm availableSavesLog.txt");
+            }
+            strcat(buffer, "\n");
+            n = write(newsockfdSaveLoad, buffer, 999);
+            if (n < 0) {
+                perror("Error writing to socket");
+            }
             close(newsockfdSaveLoad);
             printf("Client disconnected from socket %d\n", newsockfdSaveLoad);
             return NULL;

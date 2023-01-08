@@ -6,7 +6,7 @@
 
 int main(int argc, char** argv) {
     // ./POS_semestralka server 10000
-    // ./POS_semestralka client 10000
+    // ./POS_semestralka client frios2.fri.uniza.sk 10000
 
     char* newArgv[argc - 1];
     newArgv[0] = argv[0];
@@ -17,7 +17,7 @@ int main(int argc, char** argv) {
     if (strcmp(argv[1], "server") == 0) {
         server(argc, newArgv);
     } else if (strcmp(argv[1], "client") == 0) {
-        menuClient(argv[2]);
+        menuClient(argv[2], argv[3]);
     } else {
         fprintf(stderr, "Wrong arguments\n");
     }
