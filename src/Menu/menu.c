@@ -11,10 +11,14 @@ void menuClient(char* host, char* port) {
     while (1) {
         menuPortNumber = strtol(port, NULL, 10);
         CANVAS canvas;
-        printf("Welcome to game of life!\n");
-        printf("1 - create layout\n");
-        printf("2 - download from server\n");
-        printf("3 - quit\n");
+
+        printf("============================\n");
+        printf("  Welcome to Game of life!\n");
+        printf("     1 - create layout\n");
+        printf("  2 - download from server\n");
+        printf("          3 - quit\n");
+        printf("============================\n");
+
         char buff[10];
         scanf("%s", buff);
         if (strcmp(buff, "2") == 0) {
